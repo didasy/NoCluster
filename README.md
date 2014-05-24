@@ -13,6 +13,9 @@ Dependencies :
 * [Mongoskin](https://github.com/kissjs/node-mongoskin)
 * [MongoDB](http://mongodb.org)
 * [connect-mongo](https://github.com/kcbanner/connect-mongo)
+* [express-session](https://github.com/expressjs/session)
+* [cookie-parser](https://github.com/expressjs/cookie-parser)
+* [morgan](https://github.com/expressjs/morgan)
 
 ### Installation
 
@@ -28,7 +31,7 @@ Change this line
 
 Install the Node.js dependencies
 
-`npm install express axon busboy swig mandrill-api mongoskin connect-mongo`
+`npm install express axon busboy swig mandrill-api mongoskin connect-mongo express-session cookie-parser morgan --save`
 
 Install mongodb
 
@@ -249,6 +252,8 @@ Then we shard on collection level. Be sure to choose `shard key` that will be ev
 ```
 use sharded_worksinmagic_db
 db.users.ensureIndex({ _id : "hashed" })
+sh.shardCollection("sharded_worksinmagic_db.users", { "_id" : "hashed" })
+db.articles.ensureIndex({ _id : "hashed" })
 sh.shardCollection("sharded_worksinmagic_db.users", { "_id" : "hashed" })
 ```
 
