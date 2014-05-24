@@ -2,6 +2,15 @@
 ----------
 A Node.js backend cluster web server with HAProxy front-end
 
+```
+            __________
+Internet ---| HAProxy|---| front_server1        back_server1       ------------------------- 
+            |        |   |               | === | back_server2| === | MongoDB Sharded Cluster |
+            |________|---| front_server2         back_servern       -------------------------
+                                |                                         |
+                                |____________session_manager______________|
+```
+
 Dependencies :
 
 * [HAProxy](http://haproxy.1wt.eu)
