@@ -58,7 +58,11 @@ if (cluster.isMaster) {
 		if (!req.params.username) {
 			return res.send('m8, pls');
 		}
-		sock1.send('search user', req.params.username, function (data) {
+		sock1.send('search user', req.params.username, function (err, data) {
+			if (err) {
+				console.log('Error : ' + err);
+				return res.json({ err : 'Database error' });
+			}
 			res.json(data);
 		});
 	});

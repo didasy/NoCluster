@@ -36,9 +36,9 @@ if (cluster.isMaster) {
 				var regx = new RegExp('('+msg+')+', 'gi');
 				db.users.findOne({ username : /()+/gi }, { fields : { hashedPassword : -1, salt : -1 } }, function (err, user) {
 					if (err) {
-						return reply({ err : 'Cannot access database' });
+						return reply(new Error('Cannot access database'), null);
 					}
-					reply({ found : true, error : false, user : user });
+					reply(null, { found : true, user : user });
 				});
 			break;
 		}

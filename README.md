@@ -4,16 +4,16 @@ A Node.js backend cluster web server with HAProxy front-end
 
 ```
             __________
-Internet ---| HAProxy|---| front_server1        back_server1       ------------------------- 
-            |        |   |               | === | back_server2| === | MongoDB Sharded Cluster |
-            |________|---| front_server2         back_servern       -------------------------
+Internet ---| HAProxy|---| front_server1         back_server1       ------------------------- 
+            |   or   |   |               | === | back_server2| === | MongoDB Sharded Cluster |
+            |_Nginx__|---| front_server2         back_servern       -------------------------
                                 |                                         |
                                 |____________session_manager______________|
 ```
 
 Dependencies :
 
-* [HAProxy](http://haproxy.1wt.eu)
+* [HAProxy](http://haproxy.1wt.eu) or [Nginx](http://nginx.org)
 * [Axon](https://github.com/visionmedia/axon)
 * [Express](http://www.expressjs.com)
 * [Busboy](https://github.com/mscdex/busboy)
@@ -28,9 +28,9 @@ Dependencies :
 
 ### Installation
 
-`apt-get install haproxy`
+`apt-get install haproxy` or `apt-get install nginx`
 
-Enable HAProxy to be started by your init script
+Enable HAProxy to be started by your init script while nginx will automatically started
 
 `nano /etc/default/haproxy`
 
@@ -40,7 +40,7 @@ Change this line
 
 Install the Node.js dependencies
 
-`npm install express axon busboy swig mandrill-api mongoskin connect-mongo express-session cookie-parser morgan --save`
+`npm install express axon busboy swig mandrill-api mongoskin connect-mongo express-session cookie-parser morgan gridfs-locking-stream --save`
 
 Install mongodb
 
@@ -85,6 +85,37 @@ listen nocluster *:80
 ```
 
 And then save it as `/etc/haproxy/haproxy.cfg`
+
+### Nginx Configurations
+```
+upstream cluster {
+    ip_hash;
+    server 192.168.0.3:8000;
+    server 192.168.0.4:8000;
+    keepalive 64;
+}
+server {
+    listen 80;
+    server_name worksinmagic.com;
+    access_log /var/log/nginx/worksinmagic.com-access.log;
+    error_log /var/log/nginx/worksinmagic.com-error.log;
+    location / {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-NginX-Proxy true;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_pass http://cluster/;
+        proxy_redirect off;
+    }
+}
+```
+
+And then save it as `/etc/nginx/sites-enabled/cluster`
 
 ### MongoDB (Optional)
 
@@ -286,4 +317,4 @@ Which will return something like this:
 
 And then you have to make sure you connect to the query server to access a shard cluster.
 
-Or really, if you don't expect high throughput or larger than RAM dataset, using a single mongod server is enough.
+Or really, if you don't expect high throughput or larger than RAM dataset (or don't mind losing all your data if something happened), using a single mongod server is enough.
