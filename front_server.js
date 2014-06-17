@@ -23,6 +23,7 @@ if (cluster.isMaster) {
 
 	var morgan = require('morgan');
 
+	var fs = require('fs');
 	var Busboy = require('busboy');
 	// for file upload, just save to a mounted path, probably from a shared storage / NAS
 	// we do not need to stream it to the back server except for file resize (there is a workaround with saving the file and send the info on finish)
