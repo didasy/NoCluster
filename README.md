@@ -26,6 +26,10 @@ Dependencies :
 * [cookie-parser](https://github.com/expressjs/cookie-parser)
 * [morgan](https://github.com/expressjs/morgan)
 
+### Why Axon?
+
+Because it is easy. You do not have to install message passing interface at all, the module done it for you. The obvious disadvantage is lower throughput and higher latency. Consider using [ZeroMQ](http://zeromq.org) for better performance.
+
 ### Installation
 
 `apt-get install haproxy` or `apt-get install nginx`
