@@ -1,6 +1,6 @@
 var cluster = require('cluster');
 var numCPUs = require('os').cpu().length;
-var configs = require('./configs.js');
+var configs = require('./config.js');
 
 if (cluster.isMaster) {
   	// Fork workers.
@@ -16,7 +16,7 @@ if (cluster.isMaster) {
   	// In this case its a HTTP server
 	var express = require('express');
 	var app = express();
-	var cookieParser = require('cookie-parser')
+	var cookieParser = require('cookie-parser');
 	var session = require('express-sesion');
 
 	var MongoStore = require('connect-mongo')(session);
@@ -67,6 +67,7 @@ if (cluster.isMaster) {
 		var busboy = new Busboy({ headers : req.headers, fileSize : configs.limit.fileSize, files : configs.limit.files });
 		busboy.on('file', function (fieldName, file, fileName, encoding, mimetype) {
 			fileName = fileName;
+			// we are not checking if file is already exists here, should be though
 			file.pipe(fs.createWriteStream(configs.path.sharedStorage + '/' + fileName));
 		});
 		busboy.on('limit', function () {
