@@ -19,7 +19,7 @@ if (cluster.isMaster) {
 	var axon = require('axon');
 	var sock = axon.socket('rep');
 
-	var Swig = require('swig');
+	var swig = require('swig');
 	swig.setDefaults({ cache : true });
 
 	var mongoskin = require('mongoskin');
@@ -32,17 +32,43 @@ if (cluster.isMaster) {
 
 	sock.on('message', function (type, msg, reply) {
 		switch (type) {
+			case 'render page' :
+				swig.renderFile(configs.views[msg], {}, function (err, output) {
+					if (err) {
+						return reply(err, null);
+					}
+					reply(null, output);
+				});
+			break;
 			case 'search user' : // omitting credential properties
 				var regx = new RegExp('('+msg+')+', 'gi');
-				db.users.findOne({ username : /()+/gi }, { fields : { hashedPassword : -1, salt : -1 } }, function (err, user) {
+				db.users.findOne({ username : regx }, { fields : { hashedPassword : -1 } }, function (err, user) {
 					if (err) {
-						return reply(new Error('Cannot access database'), null);
+						return reply(err, null);
 					}
 					reply(null, { found : true, user : user });
+				});
+			break;
+			case 'user post login' : 
+				var hashedPassword = crypto.createHash('whirlpool').update(configs.salt).update(msg.password).digest('hex');
+				db.users.findOne({ username : msg.username, hashedPassword : hashedPassword }, function (err, user) {
+					if (err) {
+						return reply(err, null);
+					}
+					if (!user) {
+						return reply(null, { err : 'Invalid username or password' });
+					}
+					var token = uuid.v4();
+					db.users.update({ username : msg.username }, { $set : { token : token } }, function (err) {
+						if (err) {
+							return reply(err, null);
+						}
+						reply(null, { err : false, token : token });
+					});
 				});
 			break;
 		}
 	});
 
-	sock.connect(configs.axon.port1);
+	sock.connect(configs.axon.port);
 }

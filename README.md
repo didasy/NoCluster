@@ -25,6 +25,7 @@ Dependencies :
 * [express-session](https://github.com/expressjs/session)
 * [cookie-parser](https://github.com/expressjs/cookie-parser)
 * [morgan](https://github.com/expressjs/morgan)
+* [node-uuid](https://github.com/broofa/node-uuid)
 
 ### Why Axon?
 
@@ -322,3 +323,21 @@ Which will return something like this:
 And then you have to make sure you connect to the query server to access a shard cluster.
 
 Or really, if you don't expect high throughput or larger than RAM dataset (or don't mind losing all your data if something happened), using a single mongod server is enough.
+
+### About Saving Uploaded Files
+To save uploaded files, you have some choices:
+
+* Place the uploaded file in a variable and send that to back server to be saved or processed or
+* Save the uploaded file directly to the shared storage (NFS or something like that) or
+* Use [Binary.js](http://binaryjs.com) and create a dedicated streaming server for file handling or
+* Deploy a new front-end server dedicated for file handling
+
+Personally, I would go with the second choice because it's the easiest and you need a shared storage anyway. But that would means more load on the front server and that's not good if you want a snappy response. 
+
+Meanwhile, with the first choice we would make the back server busy and you wouldn't want that on a write heavy back end. 
+
+The third choice probably be good for a single page web app because you can show users their file upload progress easily and the server would be more flexible. But this would mean we can only support browsers with websocket feature.
+
+The fourth choice is similar to the third except not as flexible but support all browsers.
+
+Please choose carefully.
