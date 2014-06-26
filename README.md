@@ -13,7 +13,7 @@ Internet ---| HAProxy|---| front_server1         back_server1       ------------
 
 Dependencies :
 
-* [HAProxy](http://haproxy.1wt.eu) or [Nginx](http://nginx.org)
+* [HAProxy](http://haproxy.1wt.eu) or [Nginx](http://nginx.org) or [LVS](www.linuxvirtualserver.org)
 * [Axon](https://github.com/visionmedia/axon)
 * [Express](http://www.expressjs.com)
 * [Busboy](https://github.com/mscdex/busboy)
@@ -121,6 +121,67 @@ server {
 ```
 
 And then save it as `/etc/nginx/sites-enabled/cluster`
+
+### LVS Configurations
+
+Install ipvsadm `sudo apt-get install ipvsadm`
+
+Describe the topology
+```
+ipvsadm -A -t 127.0.0.1:80 -s sh
+ipvsadm -a -t 127.0.0.1:80 -r 192.168.0.3:8000 -m
+ipvsadm -a -t 127.0.0.1:80 -r 192.168.0.4:8000 -m
+```
+
+Now save it `ipvsadm -S -n > /etc/ipvsadm.conf`
+
+Next, make the failover work using `mon` or build your own or use `monitor.js` on this repo but I will describe how to use `mon`.
+
+First, install `sudo apt-get install mon`
+Then edit the configuration file by adding these lines
+```
+### group definitions (hostnames or IP addresses)
+hostgroup HTTP1 192.168.0.3
+ 
+watch HTTP1
+   service http
+        interval 5s
+        monitor http.monitor -p 8000
+        allow_empty_group
+        period wd {Sun-Sat}
+            alert http.alert
+            upalert http.alert
+ 
+hostgroup HTTP2 192.168.0.4
+ 
+watch HTTP2
+   service http
+        interval 5s
+        monitor http.monitor -p 8000
+        allow_empty_group
+        period wd {Sun-Sat}
+            alert http.alert
+            upalert http.alert
+```
+
+We then add http.alert to `/usr/lib/mon/alert.d/http.alert`
+```
+#!/bin/sh
+#
+# $Id: test.alert,v 1.1.1.1 2004/06/09 05:18:07 trockij Exp $
+# echo "`date` $*" >> /var/log/lvs.http.alert.log
+ 
+if [ "$9" = "-u" ]
+then
+   echo "`date` Real Server $6 is UP" >> /var/log/lvs.http.alert.log
+   ipvsadm -a -t 127.0.0.1:80 -r $6:8000 -m
+else
+   echo "`date` Real Server $6 is DOWN" >> /var/log/lvs.http.alert.log
+   ipvsadm -d -t 127.0.0.1:80 -r $6:8000 
+fi
+```
+
+Then we can finally start `mon` to monitor our servers.
 
 ### MongoDB (Optional)
 
